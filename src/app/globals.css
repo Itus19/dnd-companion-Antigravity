@@ -40,10 +40,10 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: url('/bg_landscape.jpg');
+  background-image: var(--theme-bg-image, url('https://images.unsplash.com/photo-1500627869374-13ad991b114e?w=1600&auto=format&fit=crop&q=80'));
   background-size: cover;
   background-position: center;
-  filter: blur(25px) brightness(0.28) contrast(1.05);
+  filter: blur(var(--theme-bg-blur, 25px)) brightness(var(--theme-bg-brightness, 0.28)) contrast(var(--theme-bg-contrast, 1.05));
   z-index: -10;
   transform: scale(1.05); /* Évite les bords blancs liés au flou */
   pointer-events: none;
@@ -320,13 +320,27 @@ body {
   border-radius: 2px;
   transition: color 0.15s, background 0.15s, text-decoration-color 0.15s;
 }
-
 .wiki-detected-link:hover {
   color: #fce566;
   text-decoration-color: rgba(252, 229, 102, 0.8);
   background: rgba(250, 209, 51, 0.07);
 }
 
+/* Suggested link (potential proper noun, not yet in wiki) */
+.wiki-suggest-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-style: dashed;
+  text-decoration-color: rgba(251, 191, 36, 0.35);
+  text-underline-offset: 3px;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: text-decoration-color 0.15s, background 0.15s;
+}
+.wiki-suggest-link:hover {
+  text-decoration-color: rgba(251, 191, 36, 0.75);
+  background: rgba(251, 191, 36, 0.06);
+}
 /* ======================== Spoiler ======================== */
 
 .wiki-spoiler {
@@ -373,3 +387,559 @@ body {
 }
 .player-mode-view .wiki-player-hidden::after { display: none; }
 
+/* ======================== Title 0 (Page title — biggest) ======================== */
+.block-title-0 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #f8fafc;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  border: none;
+  background: transparent;
+  outline: none;
+  width: 100%;
+  padding: 0;
+  caret-color: #f5b014;
+  display: block;
+}
+.block-title-0::placeholder { color: #334155; font-weight: 600; }
+.block-title-0:focus { color: #ffffff; }
+
+/* Block title H1 (smaller than page title, but clearly larger than rich-text H1) */
+input.block-title-h1,
+h2.block-title-h1,
+.block-title-h1 {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.6rem !important;
+  font-weight: 800 !important;
+  color: #f1f5f9 !important;
+  letter-spacing: -0.02em;
+  line-height: 1.3;
+  border: none;
+  background: transparent;
+  outline: none;
+  width: 100%;
+  padding: 0;
+  caret-color: #f5b014;
+  display: block;
+}
+.block-title-h1::placeholder { color: #475569; }
+.block-title-h1:focus { color: #ffffff !important; }
+
+/* ======================== Floating Wiki Windows ======================== */
+.wiki-workspace {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.wiki-window {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  background: var(--theme-glass-bg, rgba(10, 12, 18, 0.72)) !important;
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--theme-glass-border, rgba(255, 255, 255, 0.07)) !important;
+  border-radius: 14px;
+  box-shadow:
+    0 32px 80px rgba(0, 0, 0, 0.65),
+    0 0 0 0.5px rgba(255,255,255,0.03) inset;
+  overflow: hidden;
+}
+.wiki-window.focused {
+  border-color: rgba(var(--theme-accent-rgb, 245, 176, 20), 0.22) !important;
+  box-shadow:
+    0 32px 80px rgba(0, 0, 0, 0.75),
+    0 0 0 1px rgba(var(--theme-accent-rgb, 245, 176, 20), 0.08) inset,
+    0 0 40px rgba(var(--theme-accent-rgb, 245, 176, 20), 0.03) !important;
+}
+
+/* Window title bar */
+.wiki-window-bar {
+  height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: rgba(255,255,255,0.025);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  cursor: grab;
+  user-select: none;
+  flex-shrink: 0;
+}
+.wiki-window-bar:active { cursor: grabbing; }
+
+/* Traffic-light close/minimise dots */
+.wiki-window-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  opacity: 0.75;
+  transition: opacity 0.15s, transform 0.15s;
+  cursor: pointer;
+}
+.wiki-window-dot:hover { opacity: 1; transform: scale(1.15); }
+.wiki-window-dot.close  { background: #ff5f57; }
+.wiki-window-dot.mini   { background: #febc2e; }
+.wiki-window-dot.expand { background: #28c840; }
+
+/* Window scroll content */
+.wiki-window-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+}
+.wiki-window-content::-webkit-scrollbar { width: 4px; }
+.wiki-window-content::-webkit-scrollbar-track { background: transparent; }
+.wiki-window-content::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+
+/* Resize handle */
+.wiki-window-resize {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 18px;
+  height: 18px;
+  cursor: se-resize;
+  opacity: 0;
+  transition: opacity 0.2s;
+  z-index: 50;
+}
+.wiki-window:hover .wiki-window-resize { opacity: 1; }
+.wiki-window-resize::after {
+  content: '';
+  position: absolute;
+  bottom: 3px; right: 3px;
+  width: 10px; height: 10px;
+  border-right: 2px solid rgba(255,255,255,0.2);
+  border-bottom: 2px solid rgba(255,255,255,0.2);
+  border-radius: 0 0 2px 0;
+}
+
+/* History clock reverse rotation animation */
+@keyframes spin-backwards {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+.btn-history-clock:hover svg {
+  animation: spin-backwards 2.5s linear infinite;
+  color: #fbbf24 !important;
+}
+
+/* ======================== Relations Panel ======================== */
+.relations-panel {
+  padding: 10px 24px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.relation-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-height: 24px;
+}
+
+.relation-type-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  min-width: 72px;
+  flex-shrink: 0;
+}
+
+.relation-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: rgba(245, 176, 20, 0.10);
+  border: 1px solid rgba(245, 176, 20, 0.20);
+  color: #fad133;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.relation-tag:hover {
+  background: rgba(245, 176, 20, 0.18);
+  border-color: rgba(245, 176, 20, 0.40);
+}
+
+.relation-tag.incoming {
+  background: rgba(100, 200, 255, 0.07);
+  border-color: rgba(100, 200, 255, 0.18);
+  color: #93c5fd;
+}
+.relation-tag.incoming:hover {
+  background: rgba(100, 200, 255, 0.13);
+  border-color: rgba(100, 200, 255, 0.35);
+}
+
+.relation-tag .remove-btn {
+  width: 12px; height: 12px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  cursor: pointer;
+  color: #94a3b8;
+}
+.relation-tag:hover .remove-btn { opacity: 1; }
+
+/* ======================== THEMES SYSTEM ======================== */
+
+/* Theme variables mapped on body theme classes */
+
+/* Theme 1: Forêt Obscure (slate) - Très Sombre (Screenshot 1) */
+body.theme-slate {
+  --theme-bg-image: url('https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1600&auto=format&fit=crop&q=80');
+  --theme-bg-brightness: 0.22;
+  --theme-bg-blur: 20px;
+  --theme-bg-contrast: 1.05;
+  --theme-glass-bg: rgba(6, 8, 10, 0.88);
+  --theme-glass-border: rgba(255, 255, 255, 0.05);
+  --theme-accent-rgb: 147, 197, 253; /* soft light blue */
+
+  --color-gold-500: #93c5fd;
+  --color-gold-400: #bfdbfe;
+  --color-gold-600: #60a5fa;
+  --color-gold-300: #dbeafe;
+}
+
+/* Theme 2: Dusk Doré (default) - Sombre (Screenshot 2) */
+body, body.theme-default {
+  --theme-bg-image: url('https://images.unsplash.com/photo-1508849789987-4e5333c12b78?w=1600&auto=format&fit=crop&q=80');
+  --theme-bg-brightness: 0.34;
+  --theme-bg-blur: 20px;
+  --theme-bg-contrast: 1.05;
+  --theme-glass-bg: rgba(14, 13, 12, 0.85);
+  --theme-glass-border: rgba(245, 176, 20, 0.08);
+  --theme-accent-rgb: 245, 176, 20; /* warm gold */
+
+  --color-gold-500: #f5b014;
+  --color-gold-400: #fad133;
+  --color-gold-600: #d6870b;
+  --color-gold-300: #fce566;
+  --color-gold-200: #fdf299;
+  --color-gold-100: #fefacc;
+}
+
+/* Theme 3: Cimes Bleues (neon) - Intermédiaire (Screenshot 3) */
+body.theme-neon {
+  --theme-bg-image: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1600&auto=format&fit=crop&q=80');
+  --theme-bg-brightness: 0.52;
+  --theme-bg-blur: 15px;
+  --theme-bg-contrast: 1.05;
+  --theme-glass-bg: rgba(16, 26, 46, 0.76);
+  --theme-glass-border: rgba(56, 189, 248, 0.12);
+  --theme-accent-rgb: 56, 189, 248; /* cyan */
+
+  --color-gold-500: #38bdf8;
+  --color-gold-400: #7dd3fc;
+  --color-gold-600: #0284c7;
+  --color-gold-300: #bae6fd;
+  --color-gold-200: #e0f2fe;
+  --color-gold-100: #f0f9ff;
+}
+
+/* Theme 4: Vallée Lumineuse (grimoire) - Clair (Screenshot 4) */
+body.theme-grimoire {
+  --theme-bg-image: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=1600&auto=format&fit=crop&q=80');
+  --theme-bg-brightness: 0.92;
+  --theme-bg-blur: 12px;
+  --theme-bg-contrast: 0.95;
+  --theme-glass-bg: rgba(248, 250, 252, 0.68);
+  --theme-glass-border: rgba(15, 23, 42, 0.08);
+  --theme-accent-rgb: 37, 99, 235; /* royal blue */
+
+  --color-gold-500: #2563eb;
+  --color-gold-400: #3b82f6;
+  --color-gold-600: #1d4ed8;
+  --color-gold-300: #60a5fa;
+  --color-gold-200: #93c5fd;
+  --color-gold-100: #dbeafe;
+}
+
+/* Apply CSS variables across all components dynamically */
+.wiki-window-dot.close { background: #ff5f57 !important; }
+.wiki-window-dot.expand { background: #28c840 !important; }
+
+/* Apply accent variables to detected links and custom highlight colors */
+.wiki-detected-link {
+  color: rgb(var(--theme-accent-rgb)) !important;
+  text-decoration-color: rgba(var(--theme-accent-rgb), 0.4) !important;
+}
+.wiki-detected-link:hover {
+  color: rgb(var(--theme-accent-rgb)) !important;
+  text-decoration-color: rgba(var(--theme-accent-rgb), 0.8) !important;
+  background: rgba(var(--theme-accent-rgb), 0.08) !important;
+}
+
+/* Ensure glass classes inherit border and color theme styles */
+.glass-panel {
+  background: var(--theme-glass-bg) !important;
+  border-color: var(--theme-glass-border) !important;
+}
+.glass-panel-light {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-color: rgba(255, 255, 255, 0.04) !important;
+}
+.glass-card {
+  background: var(--theme-glass-bg) !important;
+  border-color: var(--theme-glass-border) !important;
+}
+
+/* Dynamic theme coherence for Sidebar, Header and Configuration panels globally */
+aside {
+  background: var(--theme-glass-bg, rgba(0, 0, 0, 0.4)) !important;
+  border-right-color: var(--theme-glass-border, rgba(255, 255, 255, 0.05)) !important;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+header {
+  background: rgba(0, 0, 0, 0.15) !important;
+  border-bottom: 1px solid var(--theme-glass-border, rgba(255, 255, 255, 0.05)) !important;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+.settings-modal-panel {
+  background: var(--theme-glass-bg, rgba(11, 12, 16, 0.98)) !important;
+  border: 1px solid var(--theme-glass-border, rgba(255, 255, 255, 0.08)) !important;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+/* ======================== LIGHT THEME (VALLÉE LUMINEUSE) OVERRIDES ======================== */
+
+body.theme-grimoire {
+  --foreground: #1e293b !important;
+  background-color: #f1f5f9 !important;
+  color: #1e293b !important;
+
+  /* Target headers in window */
+  .wiki-window-bar span {
+    color: #0f172a !important;
+  }
+  .block-title-h1 {
+    color: #0f172a !important;
+  }
+
+  /* Target editor text and blocks (Fixed white-on-white) */
+  .rich-text-editor {
+    color: #1e293b !important;
+  }
+  .rich-text-editor h1,
+  .rich-text-editor h2,
+  .rich-text-editor h3,
+  .rich-text-editor strong,
+  .rich-text-editor b {
+    color: #0f172a !important;
+  }
+  .rich-text-editor h2 {
+    border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+  }
+  .rich-text-editor blockquote {
+    border-left-color: rgb(var(--theme-accent-rgb)) !important;
+    color: #475569 !important;
+  }
+  .rich-text-editor code {
+    background: rgba(0, 0, 0, 0.04) !important;
+    color: #1e293b !important;
+  }
+
+  /* Labels, properties, metadata text */
+  .wiki-window label,
+  .wiki-window .text-slate-500,
+  .wiki-window .text-slate-650 {
+    color: #475569 !important;
+  }
+
+  /* Inputs, Selectors and textareas inside light windows */
+  .wiki-window input[type="text"],
+  .wiki-window input[type="number"],
+  .wiki-window select,
+  .wiki-window textarea {
+    color: #0f172a !important;
+    background: rgba(0, 0, 0, 0.04) !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+  }
+  .wiki-window select option {
+    background: #ffffff !important;
+    color: #0f172a !important;
+  }
+
+  /* Force standard dark action buttons to have readable light text (Fixed dark text in dark buttons) */
+  .wiki-window button:not(.btn-history-clock):not(.remove-btn) {
+    color: #f8fafc !important;
+  }
+  .wiki-window button:not(.btn-history-clock):not(.remove-btn):hover {
+    color: #ffffff !important;
+  }
+
+  /* Alias tags styling in light theme (pills) */
+  .wiki-window span.inline-flex.bg-slate-900\/80 {
+    background: rgba(0, 0, 0, 0.05) !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    color: #334155 !important;
+  }
+  .wiki-window span.inline-flex.bg-slate-900\/80 button {
+    color: #64748b !important;
+  }
+
+  /* Relation tags styling */
+  .relation-tag {
+    background: rgba(0, 0, 0, 0.04) !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    color: #1e293b !important;
+  }
+
+  /* "+ Ajouter une relation" button text contrast fix */
+  .wiki-window button.text-slate-500.hover\:text-amber-500 {
+    color: #334155 !important;
+  }
+  .wiki-window button.text-slate-500.hover\:text-amber-500:hover {
+    color: rgb(var(--theme-accent-rgb)) !important;
+  }
+
+  /* Target popup overlays (Wiki suggestions, Add relations) */
+  .wiki-window .absolute.z-50,
+  .rich-text-editor .fixed.z-\[101\] {
+    background: rgba(255, 255, 255, 0.98) !important;
+    border-color: rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+    color: #1e293b !important;
+  }
+  .wiki-window .absolute.z-50 *,
+  .rich-text-editor .fixed.z-\[101\] * {
+    color: #1e293b !important;
+  }
+  .wiki-window .absolute.z-50 input,
+  .wiki-window .absolute.z-50 button:not(.cursor-pointer),
+  .rich-text-editor .fixed.z-\[101\] button {
+    background: rgba(0, 0, 0, 0.03) !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    color: #1e293b !important;
+  }
+  .wiki-window .absolute.z-50 button:hover,
+  .rich-text-editor .fixed.z-\[101\] button:hover {
+    background: rgba(0, 0, 0, 0.07) !important;
+  }
+
+  /* Sidebar styling overrides */
+  aside {
+    background: rgba(255, 255, 255, 0.6) !important;
+    border-right-color: rgba(0, 0, 0, 0.08) !important;
+  }
+  aside .text-slate-300, aside .text-slate-400, aside .text-slate-500 {
+    color: #1e293b !important;
+  }
+  aside .text-slate-350 {
+    color: #0f172a !important;
+  }
+  aside .text-slate-600 {
+    color: #475569 !important;
+  }
+  aside .hover\/bg-white\/5:hover {
+    background-color: rgba(0, 0, 0, 0.04) !important;
+  }
+  aside .bg-white\/5 {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+  }
+  aside input {
+    background: rgba(0, 0, 0, 0.05) !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+    color: #1e293b !important;
+  }
+  aside input::placeholder {
+    color: #475569 !important;
+  }
+  
+  /* Sidebar status badge colors */
+  aside .bg-purple-950\/40 {
+    background-color: rgba(147, 51, 234, 0.1) !important;
+    color: #6b21a8 !important;
+    border-color: rgba(147, 51, 234, 0.2) !important;
+  }
+  aside .bg-emerald-950\/40 {
+    background-color: rgba(16, 185, 129, 0.1) !important;
+    color: #065f46 !important;
+    border-color: rgba(16, 185, 129, 0.2) !important;
+  }
+
+  /* Settings Modal styling overrides (Fixed dark cards inside light modal) */
+  .settings-modal-panel {
+    background: rgba(255, 255, 255, 0.98) !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+  }
+  .settings-modal-panel * {
+    color: #1e293b !important;
+  }
+  .settings-modal-panel .bg-dark-900\/50,
+  .settings-modal-panel .bg-dark-900\/30 {
+    background: rgba(0, 0, 0, 0.03) !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+  }
+  .settings-modal-panel input, 
+  .settings-modal-panel select,
+  .settings-modal-panel textarea {
+    background: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.12) !important;
+    color: #1e293b !important;
+  }
+  .settings-modal-panel input::placeholder,
+  .settings-modal-panel textarea::placeholder {
+    color: #64748b !important;
+  }
+
+  /* Export / Import backup buttons styling (Fixed dark on dark) */
+  .settings-modal-panel button.bg-dark-900\/60 {
+    background: rgba(0, 0, 0, 0.04) !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+  }
+  .settings-modal-panel button.bg-dark-900\/60 * {
+    color: #1e293b !important;
+  }
+  .settings-modal-panel button.bg-dark-900\/60:hover {
+    background: rgba(0, 0, 0, 0.08) !important;
+  }
+
+  /* Header navigation overrides in light theme */
+  header button {
+    color: #475569 !important;
+  }
+  header button:hover {
+    color: #0f172a !important;
+  }
+  header button.bg-white\/10 {
+    background-color: rgba(0, 0, 0, 0.06) !important;
+    color: #0f172a !important;
+    font-weight: 600 !important;
+  }
+  header .bg-black\/45 {
+    background: rgba(255, 255, 255, 0.65) !important;
+    border-color: rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04) !important;
+  }
+
+  /* Dashboard glass cards styling overrides */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.6) !important;
+    border-color: rgba(0, 0, 0, 0.08) !important;
+    color: #1e293b !important;
+  }
+  .glass-card * {
+    color: #1e293b !important;
+  }
+  header {
+    background: rgba(0, 0, 0, 0.02) !important;
+    border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+  }
+}
